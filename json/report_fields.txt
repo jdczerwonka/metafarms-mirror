@@ -1,0 +1,80 @@
+{               
+    "report_by" :
+        {   "value" : "ctl00_MainContent_drpReportBy",
+            "options":
+                {   "producer" : { "value" : "4" },
+                    "site" : { "value" : "5" },
+                    "busines_unit" : { "value" : 3 },
+                    "feed_mill" : { "value" : 9 },
+                    "pod" : { "value" : 11 },
+                    "supervisor" : { "value" : "9001" },
+                    "pig_flow" : { "value" : "2" },
+                    "pig_owner" : { "value" : "34" },
+                    "event_code" : { "value" : "16" },
+                    "event_category" : {"value" : "17" }
+                }
+        },
+    "producer" :
+        {   "value" : "ctl00_MainContent_UI_FARM_SITE1_drpFarm",
+            "options" : ""
+        },
+    "site" :
+        {   "value" : "ctl00_MainContent_UI_FARM_SITE1_drpSite",
+            "options" : ""
+        },
+    "feed_mill_check" :
+        {   "value" : "ctl00_MainContent_lblGeneric1Name" ,
+            "options" :
+            {   "check_all" : { "value" : "rlbCheckAllItemsCheckBox" },
+                "graymont_coop_association" : { "value" : "ctl00_MainContent_lbGeneric1_i0" },
+                "home_mill" : { "value" : "ctl00_MainContent_lbGeneric1_i1" },
+                "south_central_fs" : { "value" : "ctl00_MainContent_lbGeneric1_i2" }
+            }
+        },
+    "selected_dates" :
+        {   "value" : "ctl00_MainContent_drpNewDateRange",
+            "options" :
+                {   "start_end_date" : { "value" : "1" },
+                    "start_end_week" : { "value" : "2" }
+                }
+        },
+    "date_type" :
+        {   "value" : "ctl00_MainContent_drpDateType",
+            "options" :
+                {   "event_date" : { "value" : "1" },
+                     "applied_date" : { "value" : "2" }
+                }
+        },
+    "group_type" :
+        {   "value" : "ctl00_MainContent_drpType",
+            "options" :
+                {   "all_types" : { "value" : "0" },
+                    "nursery" : { "value" : "1" },
+                    "finish" : { "value" : "2" },
+                    "wean_to_finish" : { "value" : "3" },
+                    "gdu" : { "value" : "4" }
+                }
+        },
+    "status" :
+        {   "value" : "ctl00_MainContent_drpGroupStatus",
+            "options" :
+                {   "all" : { "value" : "0" },
+                    "active" : { "value" : "1" },
+                    "closed" : { "value" : "2" },
+                    "schedule" : { "value" : "3" },
+                    "inactive" : { "value" : "4" }
+                }
+        },
+    "start_date" : { "value" : "ctl00_MainContent_txtStartDate" },
+    "end_date" : { "value" : "ctl00_MainContent_txtEndDate" },
+    "start_production_week" : { "value" : "ctl00_MainContent_drpStartYearWeek" },
+    "end_production_week" : { "value" : "ctl00_MainContent_drpEndYearWeek" },
+    "report_layout" :
+        {   "value" : "ctl00_MainContent_drpCustomReport",
+            "options" :
+                {   "metafarms_summary" : { "value" : "-12" },
+                    "metafarms_full" : { "value" : "0" }
+                }
+        },
+    "run_report" : { "value" : "ctl00_MainContent_btnRunReport_input" }
+}
