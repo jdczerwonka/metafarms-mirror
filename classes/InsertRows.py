@@ -1,6 +1,8 @@
+import os
 import datetime
 import time
 import math
+import subprocess
 
 import numpy
 import pandas
@@ -8,20 +10,25 @@ import pandas
 from MetaFarms import MetaFarms as mf
 
 class InsertRows():
-    def __init__(self, Server = "", Database = "", Username = "", Password = ""):
+    def __init__(self, Server, Database, Username, Password, CFID, BasePath):
         self.server = Server
         self.database = Database
         self.username = Username
         self.password = Password
 
+        self.cfid = CFID
 
-        self.path_base = "C:\Users\Jonathan.WSF\Desktop\wsf databases"
+        self.path_base = BasePath
+        self.upload_base = self.path_base + "\uploads"
+        self.download_base = self.path_base + "\downloads"
         self.path_dict = {  'diets' : '\diets.csv',
                             'diet_ingredients' : '\diet_ingredients.csv',
                             'groups' : '\groups.csv',
                             'deaths' : '\deaths.csv',
                             'movements' : '\movements.csv',
                             'sales' : '\sales.csv'}
+
+        self.mf = MetaFarms(self.cfid, self.download_base)
 
     @property
     def bcp_str(self):
@@ -30,7 +37,11 @@ class InsertRows():
 
     @property
     def curr_save_path(self):
-        return self.path_base + self.path_dict[self.curr_table]
+        return self.upload_base + self.path_dict[self.curr_table]
+
+    @property
+    def curr_open_path(self):
+        return self.download_base + os.listdir(self.download_base)[0]
 
     def insert(self, TableStr):
         self.curr_table = TableStr
@@ -47,10 +58,10 @@ class InsertRows():
         elif self.curr_table == 'sales':
             self.sales()
 
-        subprocess.call(self.bcp_str)
+        # subprocess.call(self.bcp_str)
 
     def diets(self):       
-        df = pandas.read_excel(EXCEL_PATH, sheetname="Ingredient Quantities", skiprows=18, parse_cols=(0, 3, 6, 9, 10, 11, 14))
+        df = pandas.read_excel(self.curr_open_path, sheetname="Ingredient Quantities", skiprows=18, parse_cols=(0, 3, 6, 9, 10, 11, 14))
         df.columns = ['group_num', 'delivery_date', 'diet', 'quantity', 'mill', 'order_id', 'cost']
 
         df['year'] = pandas.DatetimeIndex(df['delivery_date']).year
@@ -64,14 +75,14 @@ class InsertRows():
         df.to_csv(self.curr_save_path, sep='\t', index=False)
 
     def diet_ingredients(self):      
-        wb = openpyxl.load_workbook(EXCEL_PATH)
+        wb = openpyxl.load_workbook(self.curr_open_path)
         ws = wb['Ingredient Quantities']
         max_col = ws.max_column
 
         col_arr = range(20, max_col)
         col_arr.insert(0, 11)
 
-        qty_df = pandas.read_excel(EXCEL_PATH, sheetname="Ingredient Quantities", skiprows=18, parse_cols=col_arr)
+        qty_df = pandas.read_excel(self.curr_open_path, sheetname="Ingredient Quantities", skiprows=18, parse_cols=col_arr)
         col_names = range(0, max_col - 20 + 1)
 
         col_names[0] = qty_df.columns[0]
@@ -84,7 +95,7 @@ class InsertRows():
 
 
 
-        cost_df = pandas.read_excel(EXCEL_PATH, sheetname="Ingredient Cost", skiprows=18, parse_cols=col_arr)
+        cost_df = pandas.read_excel(self.curr_open_path, sheetname="Ingredient Cost", skiprows=18, parse_cols=col_arr)
         col_names = range(0, max_col - 20 + 1)
 
         col_names[0] = cost_df.columns[0]
@@ -106,14 +117,16 @@ class InsertRows():
 
     def groups(self):
         
-        df = pandas.read_excel(EXCEL_PATH, sheetname="Report", skiprows=9, parse_cols=(4, 5, 6, 9, 13, 14, 15, 16))
+        self.mf.getGroupList('producer', 'All Producers')
+
+        df = pandas.read_excel(self.curr_open_path, sheetname="Report", skiprows=9, parse_cols=(4, 5, 6, 9, 13, 14, 15, 16))
         df.columns = ['producer', 'site', 'barn', 'group_num', 'group_type', 'status', 'open_date', 'close_date']
         df = df[['group_num', 'group_type', 'status', 'producer', 'site', 'barn', 'open_date', 'close_date']]
 
         df.to_csv(self.curr_save_path, sep='\t', index=False)
 
     def deaths(self):
-        df = pandas.read_excel(EXCEL_PATH, sheetname="Mortality Report", skiprows=7, parse_cols=(8, 11, 13, 14, 15, 16, 19))
+        df = pandas.read_excel(self.curr_open_path, sheetname="Mortality Report", skiprows=7, parse_cols=(8, 11, 13, 14, 15, 16, 19))
         df.columns = ['group_num', 'death_date', 'quantity', 'weight', 'death_type', 'reason', 'comments']
 
         df['year'] = pandas.DatetimeIndex(df['death_date']).year
@@ -128,7 +141,7 @@ class InsertRows():
         df.to_csv(self.curr_save_path, sep='\t', index=False)
 
     def movements(self):
-        df = pandas.read_excel(EXCEL_PATH, sheetname="Summary", skiprows=9, parse_cols=(2, 6, 10, 12, 15, 20, 21, 23, 26, 28, 29, 31))
+        df = pandas.read_excel(self.curr_open_path, sheetname="Summary", skiprows=9, parse_cols=(2, 6, 10, 12, 15, 20, 21, 23, 26, 28, 29, 31))
         df.columns = ['sow_unit', 'group', 'supplier', 'customer', 'plant', 'event_category', 'event_code', 'movement_id', 'movement_date', 'quantity', 'weight', 'cost']
 
         df['bool'] = df['group'].isnull()
@@ -157,10 +170,10 @@ class InsertRows():
 
     def sales(self):
 
-        carcass_df = pandas.read_excel(EXCEL_PATH, sheetname="Carcass Details", skiprows=9, parse_cols=(1, 4, 6, 7, 8, 9, 10, 14, 15, 16, 20, 21, 22, 23, 24, 31))
+        carcass_df = pandas.read_excel(self.curr_open_path, sheetname="Carcass Details", skiprows=9, parse_cols=(1, 4, 6, 7, 8, 9, 10, 14, 15, 16, 20, 21, 22, 23, 24, 31))
         carcass_df.columns = ['plant', 'tattoo', 'kill_date', 'quantity', 'avg_live_weight', 'avg_carcass_weight', 'base_price_cwt', 'value_cwt', 'vob_cwt', 'base_price', 'value', 'vob', 'back_fat', 'loin_depth', 'lean', 'yield']
 
-        load_df = pandas.read_excel(EXCEL_PATH, sheetname="Sales", skiprows=21, parse_cols=(20, 28, 34, 37, 50, 51, 53, 54, 55, 56, 57))
+        load_df = pandas.read_excel(self.curr_open_path, sheetname="Sales", skiprows=21, parse_cols=(20, 28, 34, 37, 50, 51, 53, 54, 55, 56, 57))
         load_df.columns = ['group_num', 'kill_date', 'tattoo', 'plant', 'avg_live_weight', 'quantity', 'avg_carcass_weight', 'back_fat', 'loin_depth', 'yield', 'lean']
         
         carcass_df['group_id'] = carcass_df['tattoo'].astype(str) + ".0" + carcass_df['kill_date'].astype(str)

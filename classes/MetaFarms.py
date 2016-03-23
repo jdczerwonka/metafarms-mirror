@@ -2,6 +2,8 @@ URL_MF = "http://iprod2.metadesk.com/EnterpriseManager/"
 
 JSON_PRODUCERS = "json/producers.txt"
 JSON_SITES = "json/sites.txt"
+JSON_WEBSITE = "json/website.txt"
+JSON_REPORT_FIELDS = "json/report_fields.txt"
 
 import time
 import os
@@ -13,8 +15,6 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait, Select
 from selenium.webdriver.support import expected_conditions as EC
 
-from dict import mf_dict, report_field_dict
-
 class MetaFarms():
     def __init__(self, ID, download_path):
         self.download_path = download_path
@@ -24,8 +24,10 @@ class MetaFarms():
         fp.set_preference("browser.download.dir", self.download_path)
         fp.set_preference("browser.helperApps.neverAsk.saveToDisk", "application/vnd.ms-excel")
 
-        self.menu = mf_dict
-        self.report_field = report_field_dict
+        self.menu = json.load(open(JSON_WEBSITE))
+        self.report_field = json.load(open(JSON_REPORT_FIELDS))
+        self.report_field['producer']['options'] = json.load(open(JSON_PRODUCERS))
+        self.report_field['site']['options'] = json.load(open(JSON_SITES))
 
         self.ID = ID
         self.driver = webdriver.Firefox(firefox_profile=fp)
