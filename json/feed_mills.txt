@@ -1,0 +1,1 @@
+{"All Feed Mills" : {"value": 0}, "Garymont Co-op Association": {"value": 1450}, "Home Mill": {"value": 1449}, "South Central FS": {"value": 1477}}

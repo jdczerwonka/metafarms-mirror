@@ -1,9 +1,11 @@
 URL_MF = "http://iprod2.metadesk.com/EnterpriseManager/"
 
-JSON_PRODUCERS = "json/producers.txt"
-JSON_SITES = "json/sites.txt"
-JSON_WEBSITE = "json/website.txt"
-JSON_REPORT_FIELDS = "json/report_fields.txt"
+GITHUB_BASE_PATH = "C:\\Users\\Jonathan.WSF\\Documents\\GitHub\\metafarms_mirror"
+JSON_PRODUCERS = GITHUB_BASE_PATH + "\\json\\producers.txt"
+JSON_SITES = GITHUB_BASE_PATH + "\\json\\sites.txt"
+JSON_FEED_MILLS = GITHUB_BASE_PATH + "\\json\\feed_mills.txt"
+JSON_WEBSITE = GITHUB_BASE_PATH + "\\json\\website.txt"
+JSON_REPORT_FIELDS = GITHUB_BASE_PATH + "\\json\\report_fields.txt"
 
 import time
 import os
@@ -22,12 +24,13 @@ class MetaFarms():
         fp.set_preference("browser.download.folderList", 2)
         fp.set_preference("browser.download.manager.showWhenStarting", False)
         fp.set_preference("browser.download.dir", self.download_path)
-        fp.set_preference("browser.helperApps.neverAsk.saveToDisk", "application/vnd.ms-excel")
+        fp.set_preference("browser.helperApps.neverAsk.saveToDisk", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, application/vnd.ms-excel")
 
         self.menu = json.load(open(JSON_WEBSITE))
         self.report_field = json.load(open(JSON_REPORT_FIELDS))
         self.report_field['producer']['options'] = json.load(open(JSON_PRODUCERS))
         self.report_field['site']['options'] = json.load(open(JSON_SITES))
+        self.report_field['feed_mill']['options'] = json.load(open(JSON_FEED_MILLS))
 
         self.ID = ID
         self.driver = webdriver.Firefox(firefox_profile=fp)
@@ -48,9 +51,9 @@ class MetaFarms():
             element = self.validateElement( x , By.XPATH )
             element.click()
 
-    def selectReportDropdown(self, ID, value):
-        element = self.validateElement( ID )
-        Select( element ).select_by_value( value )
+    def selectReportDropdown(self, ID_key, value_key):
+        element = self.validateElement( self.report_field[ID_key]["value"] )
+        Select( element ).select_by_value( str(self.report_field[ID_key]["options"][value_key]["value"]) )
 
     def selectReportOption(self, value):
         element = self.validateElement( self.getElementByValue( value ) , By.XPATH )
@@ -67,7 +70,7 @@ class MetaFarms():
         if wait:
             element = self.validateElement( self.getElementByValue( value , "input" ) , By.XPATH )
 
-    def inputReportDates(self, selected_dates, start_date, end_date):
+    def inputReportDates(self, start_date, end_date, selected_dates = "start_end_date"):
         if selected_dates == "start_end_date":
             self.inputReportText( self.report_field["start_date"]["value"] , start_date, False )
             self.inputReportText( self.report_field["end_date"]["value"] , end_date, False )
@@ -98,7 +101,87 @@ class MetaFarms():
 
     def navigateToMenu(self):
         self.driver.get(URL_MF + "Form_FM_Main_Menu_Select.aspx")
-                
+
+    def waitForDownload(self, SearchStr):
+        exist_bool = False
+        while not exist_bool:
+            for file in os.listdir(self.download_path):
+                if file.find(SearchStr) != -1:
+                    exist_bool = True
+                    break
+
+        part_bool = True
+        while part_bool:
+            part_bool = False
+            for file in os.listdir(self.download_path):
+                if file.find('.part') != -1:
+                    part_bool = True
+                    break
+
+    def renameDownload(self, SearchStr, ReplaceStr):
+        exist_bool = False
+        while not exist_bool:
+            for file in os.listdir(self.download_path):
+                if file.find(SearchStr) != -1:
+                    exist_bool = True
+                    break
+
+            if not exist_bool:
+                time.sleep(1)
+
+        time.sleep(2)
+
+        part_bool = True
+        while part_bool:
+            part_bool = False
+            for file in os.listdir(self.download_path):
+                if file.find('.part') != -1:
+                    part_bool = True
+                    time.sleep(1)
+                    break
+
+        time.sleep(2)
+
+        for file in os.listdir(self.download_path):
+            if file.find(SearchStr) != -1:
+                os.rename(self.download_path + "\\" + file, self.download_path + "\\" + ReplaceStr)
+                exist_bool = True
+                break
+
+
+    def getData(self):
+        self.getFeedMills
+        self.getProducers
+        self.getSites
+
+    @property
+    def getFeedMills(self):
+        self.navigateMenu("feed_mills")
+        
+        elements = self.driver.find_elements(By.XPATH , "//tbody/tr[@valign='middle']")
+        count = len(elements) - 1
+
+        dict_feed_mill = {"All Feed Mills" : { "value" : "0" }}
+        for num in range(1, count):
+            self.driver.switch_to_window( self.driver.window_handles[0] )
+            element = self.validateElement("ghxFeedMillMore_Data_" + str(num) )
+            element.click()
+
+            self.driver.switch_to_window( self.driver.window_handles[1] )
+            
+            element_name = self.validateElement("ctl00_MainContent_txtFeed_Mill")
+            element_id = self.validateElement("ctl00_MainContent_lblFMID")
+            dict_feed_mill[ str( element_name.get_attribute("value") ) ] = {"value" : str(element_id.text) }
+
+            self.driver.close()
+
+        self.driver.switch_to_window( self.driver.window_handles[0] )
+        open(JSON_FEED_MILLS, 'w').close()
+        json.dump(dict_feed_mill, open(JSON_FEED_MILLS, "w"))
+
+        self.navigateToMenu()
+    
+    @property
     def getProducers(self):
         self.navigateMenu("producers_sites_barns", "search_producer")
         
@@ -125,6 +208,7 @@ class MetaFarms():
 
         self.navigateToMenu()
 
+    @property
     def getSites(self):
         self.navigateMenu("producers_sites_barns", "search_site")
 
@@ -162,48 +246,77 @@ class MetaFarms():
 
         self.navigateToMenu()
 
-        x = 0
-        for file in os.listdir(self.download_path):
-            if os.path.isfile(file):
-                os.rename(file, GroupArr[x] + ".xls")
-                x = x + 1
-
     def getGroupList(self, report_by, report_by_value, group_type = "all_types", status = "all", report_layout = "metafarms_summary"):
         self.navigateMenu("reports", "finish", "group_list")
 
-        self.selectReportDropdown( self.report_field["group_type"]["value"] , self.report_field["group_type"]["options"][group_type]["value"] )  
-        self.selectReportDropdown( self.report_field["status"]["value"] , self.report_field["status"]["options"][status]["value"] )
-##        self.selectReportDropdown( self.report_field["report_layout"]["value"] , self.report_field["report_layout"]["options"][report_layout]["value"] )
+        self.selectReportDropdown( "group_type" , group_type )  
+        self.selectReportDropdown( "status" , status )
+        # self.selectReportDropdown( "report_layout" , report_layout )
 
-        self.selectReportDropdown( self.report_field["report_by"]["value"] , self.report_field["report_by"]["options"][report_by]["value"] )
-        self.selectReportDropdown( self.report_field[ report_by ]["value"] , self.report_field[ report_by ]["options"][report_by_value]["value"] )
+        self.selectReportDropdown( "report_by" , report_by )
+        self.selectReportDropdown( report_by , report_by_value )
 
         self.selectReportButton( self.report_field["run_report"]["value"] )
 
+        self.renameDownload('Group_List', 'groups.xls')
         self.navigateToMenu()
 
-    def getMovementReport(self, start_date, end_date, report_by, report_by_value, selected_dates = "start_end_date", date_type = "event_date", report_layout = "metafarms_summary"):
-        self.selectReportDropdown( self.report_field["selected_dates"]["value"] , self.report_field["selected_dates"]["options"][selected_dates]["value"] )  
-        self.selectReportDropdown( self.report_field["date_type"]["value"] , self.report_field["date_type"]["options"][date_type]["value"] )
-        self.selectReportDropdown( self.report_field["report_layout"]["value"] , self.report_field["report_layout"]["options"][report_layout]["value"] )
+    def getMortalityList(self, report_by, report_by_value, start_date, end_date, report_layout = "metafarms_summary"):
+        self.navigateMenu("reports", "finish", "mortality_list")
 
-        self.selectReportDropdown( self.report_field["report_by"]["value"] , self.report_field["report_by"]["options"][report_by]["value"] )
-        self.selectReportDropdown( self.report_field[ report_by ]["value"] , self.report_field[ report_by ]["options"][report_by_value]["value"] )
+        # self.selectReportDropdown( "report_layout" , report_layout )
 
-        self.inputReportDates(selected_dates, start_date, end_date)
+        self.selectReportDropdown( "report_by" , report_by )
+        self.selectReportDropdown( report_by , report_by_value )
 
-        self.selectReportButton( self.report_field["run_report"]["value"] )
+        self.inputReportDates(start_date, end_date)
 
+        # self.selectReportButton( self.report_field["run_report"]["value"] )
+
+        self.renameDownload('Mortality_List', 'deaths.xls')
+        self.navigateToMenu()       
+
+    def getMovementReportSingleRow(self, report_by, report_by_value, start_date, end_date, date_type = "event_date", report_layout = "metafarms_summary"):
+        self.navigateMenu("reports", "finish", "movement_report_single_row")
+
+        self.selectReportDropdown( "date_type" , date_type )
+        # self.selectReportDropdown( "report_layout" , report_layout )
+
+        self.selectReportDropdown( "report_by" , report_by )
+        self.selectReportDropdown( report_by , report_by_value )
+
+        self.inputReportDates(start_date, end_date)
+
+        # self.selectReportButton( self.report_field["run_report"]["value"] )
+
+        self.renameDownload('Movement_Report_Single_Row', 'movements.xls')
+        self.navigateToMenu()
+
+    def getDietIngredientDetail(self, start_date, end_date, feed_mill = "All Feed Mills", diet_type = "all_diet_types", producer = "All Producers", site = "All Sites", group_type = "all_types", status = "all", report_layout = "metafarms_summary"):
+        self.navigateMenu("reports", "finish", "diet_ingredient_detail")
+
+        self.selectReportDropdown( "feed_mill" , feed_mill )
+        self.selectReportDropdown( "diet_type" , diet_type )
+        self.selectReportDropdown( "producer" , producer )
+        self.selectReportDropdown( "site" , site )
+        self.selectReportDropdown( "group_type" , group_type )
+        # self.selectReportDropdown( "report_layout" , report_layout )
+
+        self.inputReportDates(start_date, end_date)
+
+        # self.selectReportButton( self.report_field["run_report"]["value"] )
+
+        self.renameDownload('Diet_Ingredient_Detail', 'diets.xlsx')
         self.navigateToMenu()
 
     def getFeedUsageReport(self, start_date, end_date, report_by, report_by_value, feed_mill_check, selected_dates = "start_end_date"):
         self.navigateMenu("reports", "finish", "feed_usage_report")
 
-        self.selectReportDropdown( self.report_field["selected_dates"]["value"] , self.report_field["selected_dates"]["options"][selected_dates]["value"] )  
-        self.inputReportDates(selected_dates, start_date, end_date)
+        self.selectReportDropdown( "selected_dates" , selected_dates )  
+        self.inputReportDates(start_date, end_date, selected_dates)
         
-        self.selectReportDropdown( self.report_field["report_by"]["value"] , self.report_field["report_by"]["options"][report_by]["value"] )
-        self.selectReportDropdown( self.report_field[ report_by ]["value"] , self.report_field[ report_by ]["options"][report_by_value]["value"] )
+        self.selectReportDropdown( "report_by" , report_by )
+        self.selectReportDropdown( report_by , report_by_value )
 
         time.sleep(.5)
 
@@ -213,4 +326,20 @@ class MetaFarms():
 
         self.selectReportButton( self.report_field["run_report"]["value"] )
 
+        self.navigateToMenu()
+
+    def getMarketSalesSummary(self, report_by, report_by_value, start_date, end_date, packer_check, report_layout = "metafarms_summary"):
+        self.navigateMenu("reports", "sales", "market_sales_summary")
+
+        self.selectReportDropdown( "report_by" , report_by )
+        self.selectReportDropdown( report_by , report_by_value )
+
+        self.selectReportCheckbox( self.report_field["packer_check"]["options"]["check_all"]["value"] )
+        for feed_mill in packer_check:
+            self.selectReportCheckbox( self.report_field["packer_check"]["options"][feed_mill]["value"] , False )
+
+        # self.selectReportDropdown( "report_layout" , report_layout )
+        self.inputReportDates(start_date, end_date)
+
+        self.renameDownload('Market_Sales_Summary', 'sales.xls')
         self.navigateToMenu()

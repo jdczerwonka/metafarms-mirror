@@ -22,14 +22,43 @@
         {   "value" : "ctl00_MainContent_UI_FARM_SITE1_drpSite",
             "options" : ""
         },
-    "feed_mill_check" :
-        {   "value" : "ctl00_MainContent_lblGeneric1Name" ,
+    "feed_mill" :
+        {   "value" : "ctl00_MainContent_drpFeedMill",
+            "options" : ""
+        },
+    "diet_type" :
+        {   "value" : "ctl00_MainContent_drpDietType",
             "options" :
-            {   "check_all" : { "value" : "rlbCheckAllItemsCheckBox" },
-                "graymont_coop_association" : { "value" : "ctl00_MainContent_lbGeneric1_i0" },
-                "home_mill" : { "value" : "ctl00_MainContent_lbGeneric1_i1" },
-                "south_central_fs" : { "value" : "ctl00_MainContent_lbGeneric1_i2" }
-            }
+                {   "all_diet_types" : { "value" : 0 },
+                    "nursery" : { "value" : 1 },
+                    "gf_gilt" : { "value" : 2 },
+                    "gf_barrow" : { "value" : 3 },
+                    "lactation" : { "value" : 4 },
+                    "gestation" : { "value" : 5 },
+                    "gilt_development" : { "value" : 6 },
+                    "sow" : { "value" : 7 },
+                    "finishing" : { "value" : 8 },
+                    "other" : { "value" : 9 }
+                }
+        },
+    "feed_mill_check" :
+        {   "value" : "ctl00_MainContent_lblGeneric1Name",
+            "options" :
+                {   "check_all" : { "value" : "rlbCheckAllItemsCheckBox" },
+                    "graymont_coop_association" : { "value" : "ctl00_MainContent_lbGeneric1_i0" },
+                    "home_mill" : { "value" : "ctl00_MainContent_lbGeneric1_i1" },
+                    "south_central_fs" : { "value" : "ctl00_MainContent_lbGeneric1_i2" }
+                }
+        },
+    "packer_check" :
+        {   "value" : "ctl00_MainContent_lblGeneric1Name",
+            "options" : 
+                {   "check_all" : { "value" : "rlbCheckAllItems" },
+                    "ipc" : { "value" : "ctl00_MainContent_lbGeneric1_i0" },
+                    "jbs" : { "value" : "ctl00_MainContent_lbGeneric1_i1" },
+                    "mike_oneill" : { "value" : "ctl00_MainContent_lbGeneric1_i2" },
+                    "unassigned" : { "value" : "ctl00_MainContent_lbGeneric1_i3" }
+                }
         },
     "selected_dates" :
         {   "value" : "ctl00_MainContent_drpNewDateRange",

@@ -18,7 +18,7 @@
                                     "combined_group_closeout" : 43471,
                                     "continuous_flow_performance_Report" : 43472,
                                     "current_group_mortality" : 43473,
-                                    "diet_ingredient_detail" : 43474,
+                                    "diet_ingredient_detail" : { "value" : 43474 },
                                     "diet_price_comparison_by_feed_mill" : 43475,
                                     "feed_budget_comparison" : 43476,
                                     "feed_deliveries" : 43477,
@@ -48,14 +48,35 @@
                                     "mortality_by_calendar_week" : 43503,
                                     "mortality_by_production_week" : 43504,
                                     "mortality_by_week_on_feed" : 43505,
-                                    "mortality_list" : 43506,
+                                    "mortality_list" : { "value" : 43506 },
                                     "movement_report" : { "value" : 43507 },
-                                    "movement_report_single_row" : 43508,
+                                    "movement_report_single_row" : { "value" : 43508 },
                                     "recalc_active_group_active_group_summary" : 43509,
                                     "scheduled_groups" : 43510
                                 }
                         },
-                    "sales" : { "value" : "CR" },
+                    "sales" : 
+                        {   "value" : "CR", 
+                            "option_type" : "option",
+                            "options" :
+                                {   "daily_market_prices" : { "value" : 43511 },
+                                    "financial_sales_report" : { "value" : 43512 },
+                                    "green_report" : { "value" : 43513 },
+                                    "group_market_load_distribution" : { "value" : 43514 },
+                                    "market_sales_distribution_charts" : { "value" : 43515 },
+                                    "market_sales_summary" : { "value" : 43516 },
+                                    "market_weight_distribution_report" : { "value" : 43517 },
+                                    "marketing_report" : { "value" : 43518 },
+                                    "marketing_target_report" : { "value" : 43519 },
+                                    "movement_report" : { "value" : 43520 },
+                                    "movement_report_single_row" : { "value" : 43521 },
+                                    "movement_sales_summary" : { "value" : 43522 },
+                                    "recalc_sales_targets" : { "value" : 43523 },
+                                    "sales_performance_monitor" : { "value" : 43524 },
+                                    "summary_kill_sheet" : { "value" : 43525 },
+                                    "weekly_market_sales_summary" : { "value" : 43526 }
+                                }
+                        },
                     "sow_analytics" : { "value" : "SSMART" },
                     "sow" : { "value" : "SWM" },
                     "supervisor" : { "value" : "SU" },
@@ -63,6 +84,7 @@
                 }
         },
     "general_attributes" : { "value" : "Form_FM_Table_Entry.aspx" },
+    "feed_mills" : { "value" : "Form_FM_Feed_Mill_Entry.aspx" },
     "producers_sites_barns" :
         {   "value" : "form_fm_producersitesetup_entry.aspx",
             "option_type" : "button", 
