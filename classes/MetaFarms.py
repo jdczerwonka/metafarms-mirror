@@ -1,11 +1,10 @@
 URL_MF = "http://iprod2.metadesk.com/EnterpriseManager/"
 
-GITHUB_BASE_PATH = "C:\\Users\\Jonathan.WSF\\Documents\\GitHub\\metafarms_mirror"
-JSON_PRODUCERS = GITHUB_BASE_PATH + "\\json\\producers.txt"
-JSON_SITES = GITHUB_BASE_PATH + "\\json\\sites.txt"
-JSON_FEED_MILLS = GITHUB_BASE_PATH + "\\json\\feed_mills.txt"
-JSON_WEBSITE = GITHUB_BASE_PATH + "\\json\\website.txt"
-JSON_REPORT_FIELDS = GITHUB_BASE_PATH + "\\json\\report_fields.txt"
+JSON_PRODUCERS = "\\json\\producers.txt"
+JSON_SITES = "\\json\\sites.txt"
+JSON_FEED_MILLS = "\\json\\feed_mills.txt"
+JSON_WEBSITE = "\\json\\website.txt"
+JSON_REPORT_FIELDS = "\\json\\report_fields.txt"
 
 import time
 import os
@@ -18,19 +17,28 @@ from selenium.webdriver.support.ui import WebDriverWait, Select
 from selenium.webdriver.support import expected_conditions as EC
 
 class MetaFarms():
-    def __init__(self, ID, download_path):
-        self.download_path = download_path
+    def __init__(self, ID, base_path, download_path, github_ext_path):
+        self.base_path = base_path
+        self.download_path = self.base_path + download_path
+        self.github_path = self.base_path + github_ext_path
+
+        self.json_producers = self.github_path + JSON_PRODUCERS
+        self.json_sites = self.github_path + JSON_SITES
+        self.json_feed_mills = self.github_path + JSON_FEED_MILLS
+        self.json_web_site = self.github_path + JSON_WEBSITE
+        self.json_report_fields = self.github_path + JSON_REPORT_FIELDS
+
         fp = webdriver.FirefoxProfile()
         fp.set_preference("browser.download.folderList", 2)
         fp.set_preference("browser.download.manager.showWhenStarting", False)
         fp.set_preference("browser.download.dir", self.download_path)
         fp.set_preference("browser.helperApps.neverAsk.saveToDisk", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, application/vnd.ms-excel")
 
-        self.menu = json.load(open(JSON_WEBSITE))
-        self.report_field = json.load(open(JSON_REPORT_FIELDS))
-        self.report_field['producer']['options'] = json.load(open(JSON_PRODUCERS))
-        self.report_field['site']['options'] = json.load(open(JSON_SITES))
-        self.report_field['feed_mill']['options'] = json.load(open(JSON_FEED_MILLS))
+        self.menu = json.load(open(self.json_web_site))
+        self.report_field = json.load(open(self.json_report_fields))
+        self.report_field['producer']['options'] = json.load(open(self.json_producers))
+        self.report_field['site']['options'] = json.load(open(self.json_sites))
+        self.report_field['feed_mill']['options'] = json.load(open(self.json_feed_mills))
 
         self.ID = ID
         self.driver = webdriver.Firefox(firefox_profile=fp)
@@ -176,8 +184,8 @@ class MetaFarms():
             self.driver.close()
 
         self.driver.switch_to_window( self.driver.window_handles[0] )
-        open(JSON_FEED_MILLS, 'w').close()
-        json.dump(dict_feed_mill, open(JSON_FEED_MILLS, "w"))
+        open(self.json_feed_mills, 'w').close()
+        json.dump(dict_feed_mill, open(self.json_feed_mills, "w"))
 
         self.navigateToMenu()
     
@@ -203,8 +211,8 @@ class MetaFarms():
             self.driver.close()
 
         self.driver.switch_to_window( self.driver.window_handles[0] )
-        open(JSON_PRODUCERS, 'w').close()
-        json.dump(dict_producer, open(JSON_PRODUCERS, "w"))
+        open(self.json_producers, 'w').close()
+        json.dump(dict_producer, open(self.json_producers, "w"))
 
         self.navigateToMenu()
 
@@ -232,8 +240,8 @@ class MetaFarms():
             self.driver.close()
 
         self.driver.switch_to_window( self.driver.window_handles[0] )
-        open(JSON_SITES, 'w').close()
-        json.dump(dict_site, open(JSON_SITES, "w"))
+        open(self.json_sites, 'w').close()
+        json.dump(dict_site, open(self.json_sites, "w"))
 
         self.navigateToMenu()
         

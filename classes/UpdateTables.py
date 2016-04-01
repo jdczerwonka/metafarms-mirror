@@ -14,8 +14,13 @@ import openpyxl
 from MetaFarms import MetaFarms as mf
 from Tables import *
 
+PROGRAM_EXT_PATH = "\\server_parallel"
+DOWNLOAD_EXT_PATH = PROGRAM_EXT_PATH + "\\downloads"
+UPLOAD_EXT_PATH = PROGRAM_EXT_PATH + "\\uploads"
+ERROR_EXT_PATH = PROGRAM_EXT_PATH + "\\errors"
+
 class UpdateTables():
-    def __init__(self, Server, Database, Username, Password, CFID, BasePath, DownloadDict):
+    def __init__(self, Server, Database, Username, Password, CFID, BasePath, GitHubExtPath, DownloadDict):
         self.server = Server
         self.database = Database
         self.username = Username
@@ -26,9 +31,10 @@ class UpdateTables():
         self.cfid = CFID
 
         self.base_path = BasePath
-        self.upload_path = self.base_path + "\uploads"
-        self.download_path = self.base_path + "\downloads"
-        self.error_path = self.base_path + "\errors"
+        self.github_ext_path = GitHubExtPath
+        self.upload_path = self.base_path + UPLOAD_EXT_PATH
+        self.download_path = self.base_path + DOWNLOAD_EXT_PATH
+        self.error_path = self.base_path + ERROR_EXT_PATH
 
         self.save_path_dict = { 'diets' : '\diets.csv',
                                 'ingredients' : '\ingredients.csv',
@@ -51,7 +57,7 @@ class UpdateTables():
                                 'movements' : '\movements.xls',
                                 'sales' : '\sales.xls'}
 
-        self.mf = mf(self.cfid, self.download_path)
+        self.mf = mf(self.cfid, self.base_path, DOWNLOAD_EXT_PATH, self.github_ext_path)
         self.download_dict = DownloadDict
         self.end_date = datetime.date.today()
         self.start_date = {}
@@ -134,10 +140,8 @@ class UpdateTables():
                 subprocess.call(self.bcp_str('diets', 'diets'))
                 print 'diets successfully updated'
 
-
             elif key == 'groups':
-                print 'groups successfully deleted'
-                print 'groups successfully updated'
+                pass
 
             elif key == 'movements':
                 session.query(Movements).filter(Movements.movement_date >= self.start_date[key].strftime("%m/%d/%Y")).delete()
@@ -280,7 +284,7 @@ class UpdateTables():
         excel_df.columns = ['producer', 'site', 'barn', 'group_num', 'group_type', 'status', 'open_date', 'close_date']
         excel_df = excel_df[['group_num', 'group_type', 'status', 'producer', 'site', 'barn', 'open_date', 'close_date']]
 
-        engine = create_engine(DB_URI)
+        engine = create_engine(self.db_uri)
         sql_df = pandas.read_sql('groups', engine)
 
         df_comb = excel_df.append(sql_df)
@@ -304,17 +308,18 @@ class UpdateTables():
         if not group_num_unique.empty:
             session.query(Groups).filter(Groups.group_num.in_(group_num_remove)).delete(synchronize_session=False)
             session.commit()
-
+            print 'groups successfully deleted'
+                
         if not change_df.empty:
             for index, row in change_df.iterrows():
-                print row['group_num']
                 session.query(Groups).filter(Groups.group_num == row['group_num']).update({'status' : row['status'], 'open_date' : row['open_date'], 'close_date' : row['close_date']})
 
-            session.commit() 
+            session.commit()
+            print 'groups successfully updated'
 
         if not add_df.empty:
-            engine = create_engine(self.db_uri)
             add_df.to_sql('groups', engine, flavor='mssql', if_exists='append', index=False)
+            print 'groups successfully added'
 
         session.close()
 
