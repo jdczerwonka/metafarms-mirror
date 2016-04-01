@@ -60,7 +60,7 @@ class UpdateTables():
         self.create_uploads
         self.update_tables
 
-        time.sleep(5)
+        time.sleep(10)
 
         self.delete_files
 
@@ -215,6 +215,7 @@ class UpdateTables():
         wb = openpyxl.load_workbook(self.open_path('ingredients'), read_only=True, use_iterators=True)
         ws = wb['Ingredient Quantities']
         max_col = ws.max_column
+        wb._archive.close()
 
         col_arr = range(20, max_col)
         col_arr.insert(0, 11)
@@ -275,11 +276,47 @@ class UpdateTables():
         df.to_csv(self.save_path('ingredients'), sep='\t', index=False, header=False)
 
     def groups(self):
-        df = pandas.read_excel(self.open_path('groups'), sheetname="Report", skiprows=9, parse_cols=(4, 5, 6, 9, 13, 14, 15, 16))
-        df.columns = ['producer', 'site', 'barn', 'group_num', 'group_type', 'status', 'open_date', 'close_date']
-        df = df[['group_num', 'group_type', 'status', 'producer', 'site', 'barn', 'open_date', 'close_date']]
+        excel_df = pandas.read_excel(self.open_path('groups'), sheetname="Report", skiprows=9, parse_cols=(4, 5, 6, 9, 13, 14, 15, 16))
+        excel_df.columns = ['producer', 'site', 'barn', 'group_num', 'group_type', 'status', 'open_date', 'close_date']
+        excel_df = excel_df[['group_num', 'group_type', 'status', 'producer', 'site', 'barn', 'open_date', 'close_date']]
 
-        df.to_csv(self.save_path('groups'), sep='\t', index=False, header=False)
+        engine = create_engine(DB_URI)
+        sql_df = pandas.read_sql('groups', engine)
+
+        df_comb = excel_df.append(sql_df)
+        group_num_unique = df_comb[~df_comb.duplicated(subset='group_num', keep=False)]['group_num']
+
+        group_num_remove = sql_df[sql_df['group_num'].isin(group_num_unique)]['group_num']
+        add_df = excel_df[excel_df['group_num'].isin(group_num_unique)]
+
+        
+
+        group_num_change_df = df_comb[~df_comb.duplicated(subset=['group_num', 'status', 'open_date', 'close_date'], keep=False)]
+        group_num_change = group_num_change_df[group_num_change_df.duplicated(subset='group_num')]['group_num']
+
+        change_df = excel_df[excel_df['group_num'].isin(group_num_change)][['group_num', 'status', 'open_date', 'close_date']]
+        change_df = change_df.fillna("")
+
+
+        
+        session = self.create_session()
+        
+        if not group_num_unique.empty:
+            session.query(Groups).filter(Groups.group_num.in_(group_num_remove)).delete(synchronize_session=False)
+            session.commit()
+
+        if not change_df.empty:
+            for index, row in change_df.iterrows():
+                print row['group_num']
+                session.query(Groups).filter(Groups.group_num == row['group_num']).update({'status' : row['status'], 'open_date' : row['open_date'], 'close_date' : row['close_date']})
+
+            session.commit() 
+
+        if not add_df.empty:
+            engine = create_engine(self.db_uri)
+            add_df.to_sql('groups', engine, flavor='mssql', if_exists='append', index=False)
+
+        session.close()
 
     def deaths(self):
         df = pandas.read_excel(self.open_path('deaths'), sheetname="Mortality Report", skiprows=7, parse_cols=(8, 11, 13, 14, 15, 16))
