@@ -7,7 +7,6 @@ import subprocess
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
-import numpy
 import pandas
 import openpyxl
 
@@ -19,18 +18,20 @@ UPLOAD_EXT_PATH = "\\uploads"
 ERROR_EXT_PATH = "\\errors"
 
 class UpdateTables():
-    def __init__(self, Server, Database, Username, Password, CFID, ProgramPath, GitHubPath, DownloadDict):
+    def __init__(self, Server, Database, Username, Password, CFID, ProgramPath, GitHubPath, bcpPath, DownloadDict):
         self.server = Server
         self.database = Database
         self.username = Username
         self.password = Password
 
-        self.db_uri = 'mssql+pyodbc://' + self.username + ':' + self.password + '@' + self.server + '/' + self.database + '?driver=SQL+Server+Native+Client+11.0'
+##        self.db_uri = 'mssql+pyodbc://' + self.username + ':' + self.password + '@' + self.server + '/' + self.database + '?driver=SQL+Server+Native+Client+11.0'
+        self.db_uri = 'mssql+pymssql://' + self.username + ':' + self.password + '@' + self.server + '/' + self.database + '?charset=utf8'
 
         self.cfid = CFID
 
         self.github_path = GitHubPath
         self.program_path = ProgramPath
+        self.bcp_path = bcpPath
 
         self.download_path = self.program_path + DOWNLOAD_EXT_PATH
         self.upload_path = self.program_path + UPLOAD_EXT_PATH
@@ -186,7 +187,7 @@ class UpdateTables():
     def bcp_str(self, TableStr, ReportStr):
         # str_arr = ["bcp ", self.database, ".dbo.", TableStr, " in ", self.save_path(ReportStr), " -c -U ", self.username, " -S ", self.server, " -t \\t -P ", self.password, self.error_file_path(ReportStr)]
         # return ''.join(str_arr)
-        return "bcp " + self.database + ".dbo." + TableStr + " in " + self.save_path(ReportStr) + " -c -U " + self.username + " -S " + self.server + " -t \\t -P " + self.password + " -e " + self.error_file_path(ReportStr)
+        return self.bcp_path + " " + self.database + ".dbo." + TableStr + " in " + self.save_path(ReportStr) + " -c -U " + self.username + " -S " + self.server + " -t \\t -P " + self.password + " -e " + self.error_file_path(ReportStr)
 
     def save_path(self, ReportStr):
         return self.upload_path + self.save_path_dict[ReportStr]
@@ -271,8 +272,8 @@ class UpdateTables():
         df['delivery_month'] = df['year'].astype(str) + " " + df['month'].astype(str)
         df['delivery_week'] = (df['year'] - ((df['week'] == 53) & (df['month'] == 1))).astype(str) + " " + df['week'].astype(str)
 
-        df['quantity'] = numpy.round(df['quantity'].astype(float), 2)
-        df['cost'] = numpy.round(df['cost'].astype(float), 2)
+        df['quantity'] = df['quantity'].astype(float).round(2)
+        df['cost'] = df['cost'].astype(float).round(2)
         
         df['id'] = ""
         df = df[['id', 'order_id', 'group_num', 'mill', 'delivery_date', 'delivery_month', 'delivery_week', 'year', 'month', 'week', 'ingredient', 'quantity', 'cost']]
@@ -313,8 +314,7 @@ class UpdateTables():
         if not change_df.empty:
             for index, row in change_df.iterrows():
                 session.query(Groups).filter(Groups.group_num == row['group_num']).update({'status' : row['status'], 'open_date' : row['open_date'], 'close_date' : row['close_date']})
-
-            session.commit()
+                session.commit()
             print 'groups successfully updated'
 
         if not add_df.empty:
@@ -400,15 +400,15 @@ class UpdateTables():
         df = pandas.merge(carcass_df, load_df[['group_num', 'group_id']], on='group_id')
         df_final = df[~ df['group_id'].isin(group_id_dupl)]
 
-        df_final['avg_carcass_wt'] = numpy.round(df_final['avg_carcass_wt'], 0)
-        df_final['avg_live_wt'] = numpy.round(df_final['avg_live_wt'], 2)
+        df_final['avg_carcass_wt'] = df_final['avg_carcass_wt'].round(0)
+        df_final['avg_live_wt'] = df_final['avg_live_wt'].round(2)
         df_final['lean'] = df_final['lean'] * 100
-        df_final['base_price_cwt'] = numpy.round(df_final['base_price_cwt'], 2)
-        df_final['vob_cwt'] = numpy.round(df_final['vob_cwt'], 2)
-        df_final['value_cwt'] = numpy.round(df_final['value_cwt'], 2)
-        df_final['base_price'] = numpy.round(df_final['base_price'], 2)
-        df_final['vob'] = numpy.round(df_final['vob'], 2)
-        df_final['value'] = numpy.round(df_final['value'], 2)
+        df_final['base_price_cwt'] = df_final['base_price_cwt'].round(2)
+        df_final['vob_cwt'] = df_final['vob_cwt'].round(2)
+        df_final['value_cwt'] = df_final['value_cwt'].round(2)
+        df_final['base_price'] = df_final['base_price'].round(2)
+        df_final['vob'] = df_final['vob'].round(2)
+        df_final['value'] = df_final['value'].round(2)
 
         df_final['year'] = pandas.DatetimeIndex(df_final['kill_date']).year
         df_final['month'] = pandas.DatetimeIndex(df_final['kill_date']).month
