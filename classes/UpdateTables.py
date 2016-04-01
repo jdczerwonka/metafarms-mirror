@@ -14,13 +14,12 @@ import openpyxl
 from MetaFarms import MetaFarms as mf
 from Tables import *
 
-PROGRAM_EXT_PATH = "\\server_parallel"
-DOWNLOAD_EXT_PATH = PROGRAM_EXT_PATH + "\\downloads"
-UPLOAD_EXT_PATH = PROGRAM_EXT_PATH + "\\uploads"
-ERROR_EXT_PATH = PROGRAM_EXT_PATH + "\\errors"
+DOWNLOAD_EXT_PATH = "\\downloads"
+UPLOAD_EXT_PATH = "\\uploads"
+ERROR_EXT_PATH = "\\errors"
 
 class UpdateTables():
-    def __init__(self, Server, Database, Username, Password, CFID, BasePath, GitHubExtPath, DownloadDict):
+    def __init__(self, Server, Database, Username, Password, CFID, ProgramPath, GitHubPath, DownloadDict):
         self.server = Server
         self.database = Database
         self.username = Username
@@ -30,34 +29,35 @@ class UpdateTables():
 
         self.cfid = CFID
 
-        self.base_path = BasePath
-        self.github_ext_path = GitHubExtPath
-        self.upload_path = self.base_path + UPLOAD_EXT_PATH
-        self.download_path = self.base_path + DOWNLOAD_EXT_PATH
-        self.error_path = self.base_path + ERROR_EXT_PATH
+        self.github_path = GitHubPath
+        self.program_path = ProgramPath
 
-        self.save_path_dict = { 'diets' : '\diets.csv',
-                                'ingredients' : '\ingredients.csv',
-                                'groups' : '\groups.csv',
-                                'deaths' : '\deaths.csv',
-                                'movements' : '\movements.csv',
-                                'sales' : '\sales.csv'}
+        self.download_path = self.program_path + DOWNLOAD_EXT_PATH
+        self.upload_path = self.program_path + UPLOAD_EXT_PATH
+        self.error_path = self.program_path + ERROR_EXT_PATH
 
-        self.error_path_dict = {'diets' : '\diets-error.txt',
-                                'ingredients' : '\ingredients-error.txt',
-                                'groups' : '\groups-error.txt',
-                                'deaths' : '\deaths-error.txt',
-                                'movements' : '\movements-error.txt',
-                                'sales' : '\sales-error.txt'}
+        self.save_path_dict = { 'diets' : '\\diets.csv',
+                                'ingredients' : '\\ingredients.csv',
+                                'groups' : '\\groups.csv',
+                                'deaths' : '\\deaths.csv',
+                                'movements' : '\\movements.csv',
+                                'sales' : '\\sales.csv'}
 
-        self.open_path_dict = { 'diets' : '\diets.xlsx',
-                                'ingredients' : '\diets.xlsx',
-                                'groups' : '\groups.xls',
-                                'deaths' : '\deaths.xls',
-                                'movements' : '\movements.xls',
-                                'sales' : '\sales.xls'}
+        self.error_path_dict = {'diets' : '\\diets-error.txt',
+                                'ingredients' : '\\ingredients-error.txt',
+                                'groups' : '\\groups-error.txt',
+                                'deaths' : '\\deaths-error.txt',
+                                'movements' : '\\movements-error.txt',
+                                'sales' : '\\sales-error.txt'}
 
-        self.mf = mf(self.cfid, self.base_path, DOWNLOAD_EXT_PATH, self.github_ext_path)
+        self.open_path_dict = { 'diets' : '\\diets.xlsx',
+                                'ingredients' : '\\diets.xlsx',
+                                'groups' : '\\groups.xls',
+                                'deaths' : '\\deaths.xls',
+                                'movements' : '\\movements.xls',
+                                'sales' : '\\sales.xls'}
+
+        self.mf = mf(self.cfid, self.download_path, self.github_path)
         self.download_dict = DownloadDict
         self.end_date = datetime.date.today()
         self.start_date = {}

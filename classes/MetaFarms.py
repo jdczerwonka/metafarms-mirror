@@ -17,10 +17,9 @@ from selenium.webdriver.support.ui import WebDriverWait, Select
 from selenium.webdriver.support import expected_conditions as EC
 
 class MetaFarms():
-    def __init__(self, ID, base_path, download_path, github_ext_path):
-        self.base_path = base_path
-        self.download_path = self.base_path + download_path
-        self.github_path = self.base_path + github_ext_path
+    def __init__(self, ID, download_path, github_path):
+        self.download_path = download_path
+        self.github_path = github_path
 
         self.json_producers = self.github_path + JSON_PRODUCERS
         self.json_sites = self.github_path + JSON_SITES
