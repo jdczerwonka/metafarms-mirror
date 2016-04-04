@@ -63,6 +63,8 @@ class UpdateTables():
         self.end_date = datetime.date.today()
         self.start_date = {}
 
+        self.delete_files
+
         self.download_files
         self.create_uploads
         self.update_tables
