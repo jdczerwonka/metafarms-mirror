@@ -1,8 +1,13 @@
 import os
+import sys
 import datetime
 import time
 import math
 import subprocess
+import logging
+
+import simplejson as json
+from requests import post as httpPost
 
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
@@ -16,13 +21,16 @@ from Tables import *
 DOWNLOAD_EXT_PATH = "\\downloads"
 UPLOAD_EXT_PATH = "\\uploads"
 ERROR_EXT_PATH = "\\errors"
+LOG_EXT_PATH = "\\logs"
 
 class UpdateTables():
-    def __init__(self, Server, Database, Username, Password, CFID, ProgramPath, GitHubPath, bcpPath, DownloadDict):
+    def __init__(self, Server, Database, Username, Password, CFID, urlSlack, ProgramPath, GitHubPath, bcpPath, LogName, DownloadDict):
         self.server = Server
         self.database = Database
         self.username = Username
         self.password = Password
+
+        self.slack_url = urlSlack
 
 ##        self.db_uri = 'mssql+pyodbc://' + self.username + ':' + self.password + '@' + self.server + '/' + self.database + '?driver=SQL+Server+Native+Client+11.0'
         self.db_uri = 'mssql+pymssql://' + self.username + ':' + self.password + '@' + self.server + '/' + self.database + '?charset=utf8'
@@ -36,6 +44,11 @@ class UpdateTables():
         self.download_path = self.program_path + DOWNLOAD_EXT_PATH
         self.upload_path = self.program_path + UPLOAD_EXT_PATH
         self.error_path = self.program_path + ERROR_EXT_PATH
+        self.log_path = self.program_path + LOG_EXT_PATH
+        self.log_name = LogName
+
+        logging.basicConfig(filename = self.log_path + "\\" + self.log_name + " " + datetime.datetime.now().strftime("%Y-%m-%d %H-%M-%S") + ".log", level = logging.INFO)
+        logging.handlers.HTTPHandler("", "https://slack.com/api/chat.postMessage?token=xoxp-10035032115-10035032131-31938252852-f0ad67c92b&channel=random&text=error recorded")
 
         self.save_path_dict = { 'diets' : '\\diets.csv',
                                 'ingredients' : '\\ingredients.csv',
@@ -63,15 +76,25 @@ class UpdateTables():
         self.end_date = datetime.date.today()
         self.start_date = {}
 
-        self.delete_files
+        try:
+            self.delete_files
 
-        self.download_files
-        self.create_uploads
-        self.update_tables
+            self.download_files
+            self.create_uploads
+            self.update_tables
+        except Exception:
+            logging.exception("Error!")
 
-        time.sleep(10)
+            payload = {'text': 'Error logged at ' + datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S") + ' for ' + self.log_name}
+            headers = {'content-type': 'application/json'}
 
-        self.delete_files
+            r = httpPost(self.slack_url, data=json.dumps(payload), headers=headers)
+
+            print "Error occurred"
+            sys.exit(1)
+
+        logging.info(self.log_name + " ran successfully at " + datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
+        print "Run successful"
 
     @property
     def download_files(self):
@@ -79,22 +102,22 @@ class UpdateTables():
             self.start_date[key] = (self.end_date - datetime.timedelta(days=self.download_dict[key]))
             if key == 'diets':
                 self.mf.getDietIngredientDetail(self.start_date[key].strftime("%m/%d/%Y"), self.end_date.strftime("%m/%d/%Y"), 'Home Mill')
-                print 'diets successfully downloaded'
+                logging.info('diets successfully downloaded')
 
             elif key == 'groups':
                 self.mf.getGroupList('producer', 'All Producers')
-                print 'groups successfully downloaded'
+                logging.info('groups successfully downloaded')
 
             elif key == 'movements':
                 self.mf.getMovementReportSingleRow('producer', 'All Producers', self.start_date[key].strftime("%m/%d/%Y"), self.end_date.strftime("%m/%d/%Y"))
-                print 'movements successfully downloaded'
+                logging.info('movements successfully downloaded')
 
                 self.mf.getMortalityList('producer', 'All Producers', self.start_date[key].strftime("%m/%d/%Y"), self.end_date.strftime("%m/%d/%Y"))
-                print 'deaths successfully downloaded'
+                logging.info('deaths successfully downloaded')
 
             elif key == 'sales':
                 self.mf.getMarketSalesSummary('producer', 'All Producers', self.start_date[key].strftime("%m/%d/%Y"), self.end_date.strftime("%m/%d/%Y"), ['jbs', 'ipc'])
-                print 'sales successfully downloaded'
+                logging.info('sales successfully downloaded')
 
         self.mf.close()
 
@@ -103,25 +126,25 @@ class UpdateTables():
         for key in self.download_dict:
             if key == 'diets':
                 self.diets()
-                print 'diets successfully parsed'
+                logging.info('diets successfully parsed')
 
                 self.ingredients()
-                print 'ingredients successfully parsed'
+                logging.info('ingredients successfully parsed')
 
             elif key == 'groups':
                 self.groups()
-                print 'groups successfully parsed'
+                logging.info('groups successfully parsed')
 
             elif key == 'movements':
                 self.movements()
-                print 'movements successfully parsed'
+                logging.info('movements successfully parsed')
 
                 self.deaths()
-                print 'deaths successfully parsed'
+                logging.info('deaths successfully parsed')
 
             elif key == 'sales':
                 self.sales()
-                print 'sales successfully parsed'
+                logging.info('sales successfully parsed')
 
     @property
     def update_tables(self):
@@ -131,17 +154,17 @@ class UpdateTables():
             if key == 'diets':
                 session.query(Ingredients).filter(Ingredients.delivery_date >= self.start_date[key]).delete()
                 session.commit()
-                print 'ingredients successfully deleted'
+                logging.info('ingredients successfully deleted')
 
                 subprocess.call(self.bcp_str('ingredients', 'ingredients'))
-                print 'ingredients successfully updated'
+                logging.info('ingredients successfully updated')
 
                 session.query(Diets).filter(Diets.delivery_date >= self.start_date[key].strftime("%m/%d/%Y")).delete()
                 session.commit()
-                print 'diets successfully deleted'
+                logging.info('diets successfully deleted')
 
                 subprocess.call(self.bcp_str('diets', 'diets'))
-                print 'diets successfully updated'
+                logging.info('diets successfully updated')
 
             elif key == 'groups':
                 pass
@@ -149,21 +172,21 @@ class UpdateTables():
             elif key == 'movements':
                 session.query(Movements).filter(Movements.movement_date >= self.start_date[key].strftime("%m/%d/%Y")).delete()
                 session.commit()
-                print 'movements successfully deleted'
+                logging.info('movements successfully deleted')
                 
                 subprocess.call(self.bcp_str('movements', 'movements'))
-                print 'movements successfully updated'
+                logging.info('movements successfully updated')
 
                 subprocess.call(self.bcp_str('movements', 'deaths'))
-                print 'deaths successfully updated'
+                logging.info('deaths successfully updated')
 
             elif key == 'sales':
                 session.query(Sales).filter(Sales.kill_date >= self.start_date[key].strftime("%m/%d/%Y")).delete()
                 session.commit()
-                print 'sales successfully deleted'
+                logging.info('sales successfully deleted')
                 
                 subprocess.call(self.bcp_str('sales', 'sales'))
-                print 'sales successfully updated'
+                logging.info('sales successfully updated')
 
         session.close()
 
@@ -172,12 +195,12 @@ class UpdateTables():
         for file in os.listdir(self.download_path):
             os.remove(self.download_path + "\\" + file)
 
-        print 'downloads deleted'
+        logging.info('downloads deleted')
 
         for file in os.listdir(self.upload_path):
             os.remove(self.upload_path + "\\" + file)
 
-        print 'uploads deleted'
+        logging.info('uploads deleted')
 
     def create_session(self):
         engine = create_engine(self.db_uri)
@@ -283,7 +306,7 @@ class UpdateTables():
         df.to_csv(self.save_path('ingredients'), sep='\t', index=False, header=False)
 
     def groups(self):
-        excel_df = pandas.read_excel(self.open_path('groups'), sheetname="Report", skiprows=9, parse_cols=(4, 5, 6, 9, 13, 14, 15, 16))
+        excel_df = pandas.read_excel(self.open_path('groups'), sheetname="Report", skiprows=9, parse_cols=(14, 15, 16, 19, 23, 24, 25, 26))
         excel_df.columns = ['producer', 'site', 'barn', 'group_num', 'group_type', 'status', 'open_date', 'close_date']
         excel_df = excel_df[['group_num', 'group_type', 'status', 'producer', 'site', 'barn', 'open_date', 'close_date']]
 
@@ -295,8 +318,6 @@ class UpdateTables():
 
         group_num_remove = sql_df[sql_df['group_num'].isin(group_num_unique)]['group_num']
         add_df = excel_df[excel_df['group_num'].isin(group_num_unique)]
-
-        
 
         group_num_change_df = df_comb[~df_comb.duplicated(subset=['group_num', 'status', 'open_date', 'close_date'], keep=False)]
         group_num_change = group_num_change_df[group_num_change_df.duplicated(subset='group_num')]['group_num']
@@ -311,17 +332,17 @@ class UpdateTables():
         if not group_num_unique.empty:
             session.query(Groups).filter(Groups.group_num.in_(group_num_remove)).delete(synchronize_session=False)
             session.commit()
-            print 'groups successfully deleted'
+            logging.info('groups successfully deleted')
                 
         if not change_df.empty:
             for index, row in change_df.iterrows():
                 session.query(Groups).filter(Groups.group_num == row['group_num']).update({'status' : row['status'], 'open_date' : row['open_date'], 'close_date' : row['close_date']})
                 session.commit()
-            print 'groups successfully updated'
+            logging.info('groups successfully updated')
 
         if not add_df.empty:
             add_df.to_sql('groups', engine, flavor='mssql', if_exists='append', index=False)
-            print 'groups successfully added'
+            logging.info('groups successfully added')
 
         session.close()
 
@@ -392,7 +413,7 @@ class UpdateTables():
         carcass_df = pandas.read_excel(self.open_path('sales'), sheetname="Carcass Details", skiprows=9, parse_cols=(1, 4, 6, 7, 8, 9, 10, 14, 15, 16, 20, 21, 22, 23, 24, 31))
         carcass_df.columns = ['plant', 'tattoo', 'kill_date', 'quantity', 'avg_live_wt', 'avg_carcass_wt', 'base_price_cwt', 'value_cwt', 'vob_cwt', 'base_price', 'value', 'vob', 'back_fat', 'loin_depth', 'lean', 'yield']
 
-        load_df = pandas.read_excel(self.open_path('sales'), sheetname="Sales", skiprows=21, parse_cols=(20, 28, 34, 37))
+        load_df = pandas.read_excel(self.open_path('sales'), sheetname="Sales", skiprows=21, parse_cols=(20, 28, 34, 38))
         load_df.columns = ['group_num', 'kill_date', 'plant', 'tattoo']
         
         carcass_df['group_id'] = carcass_df['tattoo'].astype(str) + ".0" + carcass_df['kill_date'].astype(str)
