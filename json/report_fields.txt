@@ -22,6 +22,7 @@
         {   "value" : "ctl00_MainContent_UI_FARM_SITE1_drpSite",
             "options" : ""
         },
+    "group" : { "value" : "ctl00_MainContent_UI_FARM_SITE1_drpGroup" },
     "feed_mill" :
         {   "value" : "ctl00_MainContent_drpFeedMill",
             "options" : ""
@@ -90,7 +91,7 @@
                 {   "all" : { "value" : "0" },
                     "active" : { "value" : "1" },
                     "closed" : { "value" : "2" },
-                    "schedule" : { "value" : "3" },
+                    "scheduled" : { "value" : "3" },
                     "inactive" : { "value" : "4" }
                 }
         },

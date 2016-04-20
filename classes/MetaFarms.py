@@ -58,9 +58,18 @@ class MetaFarms():
             element = self.validateElement( x , By.XPATH )
             element.click()
 
-    def selectReportDropdown(self, ID_key, value_key):
+    def selectReportDropdown(self, ID_key, value, select_by = "value"):
         element = self.validateElement( self.report_field[ID_key]["value"] )
-        Select( element ).select_by_value( str(self.report_field[ID_key]["options"][value_key]["value"]) )
+        if select_by == "value":
+            Select( element ).select_by_value( str(self.report_field[ID_key]["options"][value]["value"]) )
+        elif select_by == "index":
+            Select( element ).select_by_index( value )
+        elif select_by == "text":
+            Select( element ).select_by_visible_text( value )
+
+    def selectReportDropdownText(self, ID_key, text):
+        element = self.validateElement( self.report_field[ID_key]["value"] )
+        Select( element ).select_by_visible_text( text )
 
     def selectReportOption(self, value):
         element = self.validateElement( self.getElementByValue( value ) , By.XPATH )
@@ -134,9 +143,9 @@ class MetaFarms():
                     break
 
             if not exist_bool:
-                time.sleep(1)
+                time.sleep(.5)
 
-        time.sleep(2)
+        time.sleep(.5)
 
         part_bool = True
         while part_bool:
@@ -144,10 +153,10 @@ class MetaFarms():
             for file in os.listdir(self.download_path):
                 if file.find('.part') != -1:
                     part_bool = True
-                    time.sleep(1)
+                    time.sleep(.5)
                     break
 
-        time.sleep(2)
+        time.sleep(.5)
 
         for file in os.listdir(self.download_path):
             if file.find(SearchStr) != -1:
@@ -249,7 +258,9 @@ class MetaFarms():
         
         for group in GroupArr:
             self.inputReportText( "ctl00_MainContent_UI_FARM_SITE1_txtUI_FARM_SITE_GroupMask" , group )
+            self.selectReportDropdown( "group" , 1 , "index")
             self.selectReportButton( self.report_field["run_report"]["value"] )
+            self.renameDownload('Group_Detail_Report', "closeouts\\" + group + '.xls')
 
         self.navigateToMenu()
 
@@ -313,7 +324,7 @@ class MetaFarms():
 
         # self.selectReportButton( self.report_field["run_report"]["value"] )
 
-        self.renameDownload('Diet_Ingredient_Detail', 'diets.xlsx')
+        self.renameDownload('Diet_Ingredient_Detail', 'ingredients.xlsx')
         self.navigateToMenu()
 
     def getFeedUsageReport(self, start_date, end_date, report_by, report_by_value, feed_mill_check, selected_dates = "start_end_date"):
