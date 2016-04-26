@@ -156,7 +156,7 @@ class MetaFarms():
                     time.sleep(.5)
                     break
 
-        time.sleep(.5)
+        time.sleep(1)
 
         for file in os.listdir(self.download_path):
             if file.find(SearchStr) != -1:

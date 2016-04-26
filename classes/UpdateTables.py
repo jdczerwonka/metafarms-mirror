@@ -149,6 +149,7 @@ class UpdateTables():
             self.create_uploads
             self.update_tables
         except Exception:
+            self.mf.close()
             logging.exception("Error!")
 
             if self.slack_post_bool:
