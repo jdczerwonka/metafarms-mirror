@@ -27,11 +27,11 @@ class MetaFarms():
         self.json_web_site = self.github_path + JSON_WEBSITE
         self.json_report_fields = self.github_path + JSON_REPORT_FIELDS
 
-        fp = webdriver.FirefoxProfile()
-        fp.set_preference("browser.download.folderList", 2)
-        fp.set_preference("browser.download.manager.showWhenStarting", False)
-        fp.set_preference("browser.download.dir", self.download_path)
-        fp.set_preference("browser.helperApps.neverAsk.saveToDisk", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, application/vnd.ms-excel")
+        self.fp = webdriver.FirefoxProfile()
+        self.fp.set_preference("browser.download.folderList", 2)
+        self.fp.set_preference("browser.download.manager.showWhenStarting", False)
+        self.fp.set_preference("browser.download.dir", self.download_path)
+        self.fp.set_preference("browser.helperApps.neverAsk.saveToDisk", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, application/vnd.ms-excel")
 
         self.menu = json.load(open(self.json_web_site))
         self.report_field = json.load(open(self.json_report_fields))
@@ -40,7 +40,9 @@ class MetaFarms():
         self.report_field['feed_mill']['options'] = json.load(open(self.json_feed_mills))
 
         self.ID = ID
-        self.driver = webdriver.Firefox(firefox_profile=fp)
+
+    def open(self):
+        self.driver = webdriver.Firefox(firefox_profile=self.fp)
         self.wait = WebDriverWait(self.driver, 10)
 
         self.driver.get(URL_MF + "Form_FM_Main_Menu_Select.aspx?cfid=" + self.ID)
@@ -143,9 +145,9 @@ class MetaFarms():
                     break
 
             if not exist_bool:
-                time.sleep(.5)
+                time.sleep(.4)
 
-        time.sleep(.5)
+        time.sleep(.2)
 
         part_bool = True
         while part_bool:
@@ -153,10 +155,10 @@ class MetaFarms():
             for file in os.listdir(self.download_path):
                 if file.find('.part') != -1:
                     part_bool = True
-                    time.sleep(.5)
+                    time.sleep(.4)
                     break
 
-        time.sleep(1)
+        time.sleep(.2)
 
         for file in os.listdir(self.download_path):
             if file.find(SearchStr) != -1:

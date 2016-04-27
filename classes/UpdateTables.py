@@ -140,6 +140,8 @@ class UpdateTables():
 
         for key in self.download_dict:
             self.start_date[key] = (self.end_date - datetime.timedelta(days=self.download_dict[key]))
+
+        self.mf = mf(self.cfid, self.download_path, self.github_path)
         
     def update(self, download_bool = True):
         try:
@@ -166,7 +168,7 @@ class UpdateTables():
 
     @property
     def download_files(self):
-        self.mf = mf(self.cfid, self.download_path, self.github_path)
+        self.mf.open()
 
         for key in self.download_dict:
             if key == 'ingredients':
