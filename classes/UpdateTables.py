@@ -151,7 +151,8 @@ class UpdateTables():
             self.create_uploads
             self.update_tables
         except Exception:
-            self.mf.close()
+            if not self.mf is None: 
+                self.mf.close_browser()
             logging.exception("Error!")
 
             if self.slack_post_bool:
@@ -168,7 +169,7 @@ class UpdateTables():
 
     @property
     def download_files(self):
-        self.mf.open()
+        self.mf.open_browser()
 
         for key in self.download_dict:
             if key == 'ingredients':
@@ -199,7 +200,7 @@ class UpdateTables():
                 self.mf.getGroupDetailCloseout(self.closeout_groups_red)
 
         logging.info(key + ' successfully downloaded')
-        self.mf.close()
+        self.mf.close_browser()
 
     @property
     def create_uploads(self):

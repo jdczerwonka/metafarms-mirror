@@ -41,15 +41,15 @@ class MetaFarms():
 
         self.ID = ID
 
-    def open(self):
+    def open_browser(self):
         self.driver = webdriver.Firefox(firefox_profile=self.fp)
         self.wait = WebDriverWait(self.driver, 10)
 
         self.driver.get(URL_MF + "Form_FM_Main_Menu_Select.aspx?cfid=" + self.ID)
         element = self.validateElement("companyname")
 
-    def close(self):
-        self.driver.close()
+    def close_browser(self):
+        self.driver.quit()
 
     def selectReportCheckbox(self, value, check_all = True):
         if check_all:
@@ -145,9 +145,9 @@ class MetaFarms():
                     break
 
             if not exist_bool:
-                time.sleep(.4)
+                time.sleep(.5)
 
-        time.sleep(.2)
+        time.sleep(.5)
 
         part_bool = True
         while part_bool:
@@ -155,10 +155,10 @@ class MetaFarms():
             for file in os.listdir(self.download_path):
                 if file.find('.part') != -1:
                     part_bool = True
-                    time.sleep(.4)
+                    time.sleep(.5)
                     break
 
-        time.sleep(.2)
+        time.sleep(.5)
 
         for file in os.listdir(self.download_path):
             if file.find(SearchStr) != -1:
@@ -257,10 +257,28 @@ class MetaFarms():
         
     def getGroupDetailCloseout(self, GroupArr):
         self.navigateMenu("reports", "finish", "group_detail_closeout")
-        
+
+        error_group = ""
+        error_count = 0
         for group in GroupArr:
-            self.inputReportText( "ctl00_MainContent_UI_FARM_SITE1_txtUI_FARM_SITE_GroupMask" , group )
-            self.selectReportDropdown( "group" , 1 , "index")
+            error_bool = True
+
+            while error_bool:
+                try:
+                    error_bool = False
+                    self.inputReportText( "ctl00_MainContent_UI_FARM_SITE1_txtUI_FARM_SITE_GroupMask" , group )
+                    self.selectReportDropdown( "group" , 1 , "index")
+                except:
+                    if error_count >= 3:
+                        raise
+                    else:
+                        if error_group == group:
+                            error_count = error_count + 1
+                        else:
+                            error_count = 1
+
+                        error_bool = True
+                    
             self.selectReportButton( self.report_field["run_report"]["value"] )
             self.renameDownload('Group_Detail_Report', "closeouts\\" + group + '.xls')
 
